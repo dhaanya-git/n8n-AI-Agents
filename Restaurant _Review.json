@@ -1,0 +1,329 @@
+{
+  "name": "Restaurant _Review",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5a6fbacd-543c-4120-ad48-8d334653feef",
+      "name": "Schedule Trigger",
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "91ca4cba-08ac-4a1a-aa2d-84e1d2b9ca9d",
+              "name": "customer_name",
+              "value": "Rakesh",
+              "type": "string"
+            },
+            {
+              "id": "52c33c1c-ad26-4fac-8213-86991e181fef",
+              "name": "platform",
+              "value": "Zomato",
+              "type": "string"
+            },
+            {
+              "id": "60811095-5394-42ea-a01e-44b1a001ad78",
+              "name": "rating",
+              "value": "2",
+              "type": "string"
+            },
+            {
+              "id": "d46776ac-b45c-467c-b101-86c72aeb9ca9",
+              "name": "review_text",
+              "value": "Food was cold and late",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1c047f4f-649a-41b0-8c3e-a9ff96a048c0",
+      "name": "Edit Fields",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  \"model\": \"llama-3.1-8b-instant\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": $json.prompt\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 150\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "19588c25-9ee7-45a7-8f0f-c553b21e12de",
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const aiReply = $json.choices[0].message.content;\n\nconst lowerReply = aiReply.toLowerCase();\n\nlet sentiment = \"Positive\";\nlet escalation = \"No\";\n\nif (\n  lowerReply.includes(\"sorry\") ||\n  lowerReply.includes(\"apologize\") ||\n  lowerReply.includes(\"apology\") ||\n  lowerReply.includes(\"regret\")\n) {\n  sentiment = \"Negative\";\n}\n\nif (\n  lowerReply.includes(\"refund\") ||\n  lowerReply.includes(\"urgent\") ||\n  lowerReply.includes(\"manager\") ||\n  lowerReply.includes(\"compensation\")\n) {\n  escalation = \"Yes\";\n}\n\nreturn {\n  ai_response: aiReply,\n  sentiment: sentiment,\n  escalation: escalation\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "cf9a28f2-1242-40b0-93a9-42f29ef87dfa",
+      "name": "Code in JavaScript",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const rating = $json.rating;\nconst review = $json.review_text;\nconst customer = $json.customer_name;\nconst platform = $json.platform;\n\nlet instruction = \"\";\n\nif (rating >= 4) {\n  instruction = \"Generate a warm and friendly thank-you reply for this restaurant review.\";\n} else {\n  instruction = \"Generate a professional apology reply for this negative restaurant review. Sound empathetic and human.\";\n}\n\nreturn {\n  prompt: `\nCustomer Name: ${customer}\nPlatform: ${platform}\nRating: ${rating}\nReview: ${review}\n\n${instruction}\n\nKeep the reply short and professional.\n`\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "7577bf2c-3bd6-4eb1-8efb-58a57600c0da",
+      "name": "Code in JavaScript1",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1E55Ujm54MjKetdOxMkacdNFm6FX3qxrB5EeV14s3b6k",
+          "mode": "list",
+          "cachedResultName": "Restaurant_Reviews",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E55Ujm54MjKetdOxMkacdNFm6FX3qxrB5EeV14s3b6k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E55Ujm54MjKetdOxMkacdNFm6FX3qxrB5EeV14s3b6k/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "review_id": "1",
+            "customer_name": "Rakesh",
+            "platform": "Zomato",
+            "rating": "2",
+            "review_text": "Food was cold and late",
+            "ai_response": "We're truly sorry your order arrived cold and late. We appreciate your feedback and will improve our service.",
+            "sentiment": "Negative",
+            "escalation": "No"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "review_id",
+              "displayName": "review_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_text",
+              "displayName": "review_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ai_response",
+              "displayName": "ai_response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "escalation",
+              "displayName": "escalation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "22c5cecc-53cd-4fc3-823b-0b784f8995d5",
+      "name": "Append row in sheet",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ipeaai8jPg6DBt5N",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0400a6ba-d52d-4c1a-9e5b-8eb95bb7f332",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "792006ef7a7ebc36fc5abd99bf921da5e1552f75133b4eebce244bda1ddbd0bd"
+  },
+  "id": "nwrsdlj457nVZ5dN",
+  "tags": []
+}
